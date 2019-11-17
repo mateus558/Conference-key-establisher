@@ -29,8 +29,8 @@ for i in range(n):
     alpha *= pow(p, 2)*(p-1)
     beta *= p*(p-1)*temp_q
 
-print("alpha divides beta^2? {0}".format(alpha % pow(beta,2)))
-print("alpha divides beta? {0}".format(alpha % beta))
+print("alpha divides beta^2? rest of division: {0}".format(pow(beta,2) % alpha))
+print("alpha divides beta? rest of division: {0}".format(beta % alpha))
 print("pn: {0}\npm: {1}\n".format(pn, pm))
 
 totient_delta = totient(delta)
@@ -44,19 +44,19 @@ print("delta: {0}\n beta: {1}\n alpha: {2}\n y: {3}".format(delta, beta, alpha, 
 # Alice work
 xa = random.randrange(1,delta)
 xb = random.randrange(1,totient_delta)
-while totient_delta % xb*beta == 0:
+while xb*beta % totient_delta == 0:
     xb = random.randrange(totient_delta)
 gamma = alpha*pow(xa,2) + beta*xb
 
 # Bob work
-_xa = random.randrange(1,delta)
-_xb = random.randrange(1,totient_delta)
-while totient_delta % _xb*gamma == 0:
-    _xb = random.randrange(totient_delta)
-_gamma = alpha*pow(_xa,2) + beta*_xb
+xa1 = random.randrange(1,delta)
+xb1 = random.randrange(1,totient_delta)
+while xb1*gamma % totient_delta == 0:
+    xb1 = random.randrange(totient_delta)
+gamma1 = alpha*pow(xa1,2) + beta*xb1
 
-kab = pow(y, _gamma * xb, delta)
-kba = pow(y, gamma * _xb, delta)
+kab = pow(y, gamma1 * xb, delta)
+kba = pow(y, gamma * xb1, delta)
 
 print("\nkab: {0}\nkba = {1}".format(kab, kba))
 
@@ -71,7 +71,7 @@ while sympy.igcd(y, delta) != 1:
 # carlos escolhe xc1, xc2 e calcula gamma3
 xc1 = random.randrange(1,delta)
 xc2 = random.randrange(1,totient_delta)
-while totient_delta % xc2*gamma2 == 0:
+while xc2*gamma2 % totient_delta == 0:
     xc2 = random.randrange(totient_delta)
 gamma3 = alpha*pow(xa2, 2) + beta*xc2
 
