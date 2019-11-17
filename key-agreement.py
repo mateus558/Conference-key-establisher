@@ -5,28 +5,33 @@ import random
 psize = 10000
 n = int(input("n primes: "))
 m = int(input("m primes: "))
-# Trent work
-pn = [sympy.sieve[random.randrange(psize)] for i in range(n)]
-pm = []
-for i in range(m):
-    p = sympy.sieve[random.randrange(psize)]
-    while p in pn:
-        p = sympy.sieve[random.randrange(psize)]
-    pm.append(p)
 
-print("pn: {0}\npm: {1}\n".format(pn, pm))
+# Trent work
+pn = []
+pm = []
+
 delta = 1
 alpha = 1
 beta = 1
 temp_q = 1
 
-for p in pn:
+for i in range(m):
+    p = sympy.sieve[random.randrange(psize)]
+    pm.append(p)
+    temp_q *= p
+
+for i in range(n):
+    p = sympy.sieve[random.randrange(psize)]
+    while p in pm:
+        p = sympy.sieve[random.randrange(psize)]
+    pn.append(p)
     delta *= pow(p, 3)
     alpha *= pow(p, 2)*(p-1)
     beta *= p*(p-1)*temp_q
 
-for q in pm:
-    temp_q *= q
+print("alpha divides beta^2? {0}".format(alpha % pow(beta,2)))
+print("alpha divides beta? {0}".format(alpha % beta))
+print("pn: {0}\npm: {1}\n".format(pn, pm))
 
 totient_delta = totient(delta)
 y = random.randrange(delta)
@@ -42,7 +47,6 @@ xb = random.randrange(1,totient_delta)
 while totient_delta % xb*beta == 0:
     xb = random.randrange(totient_delta)
 gamma = alpha*pow(xa,2) + beta*xb
-
 
 # Bob work
 _xa = random.randrange(1,delta)
