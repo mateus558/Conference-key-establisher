@@ -41,14 +41,14 @@ while sympy.igcd(y, delta) != 1:
 
 print("delta: {0}\n beta: {1}\n alpha: {2}\n y: {3}".format(delta, beta, alpha, y))
 
-# Alice work
+# Alice work (recebe delta, beta e alpha de trent)
 xa = random.randrange(1,delta)
 xb = random.randrange(1,totient_delta)
 while xb*beta % totient_delta == 0:
     xb = random.randrange(totient_delta)
 gamma = alpha*pow(xa,2) + beta*xb
 
-# Bob work
+# Bob work (recebe gamma e delta de alice)
 xa1 = random.randrange(1,delta)
 xb1 = random.randrange(1,totient_delta)
 while xb1*gamma % totient_delta == 0:
@@ -58,7 +58,7 @@ gamma1 = alpha*pow(xa1,2) + beta*xb1
 kab = pow(y, gamma1 * xb, delta)
 kba = pow(y, gamma * xb1, delta)
 
-print("\nkab: {0}\nkba = {1}".format(kab, kba))
+print("\nkab: {0}\nkba: {1}".format(kab, kba))
 
 # Carlos entra na rede
 # alice calcula gamma2 e xa2
@@ -80,4 +80,4 @@ kabc = pow(y, gamma3*kab, delta)
 #carlos calcula kabc
 kabc1 = pow(y, gamma2*xc2, delta)
 
-print("\nkabc: {0}\nkabc1 = {1}".format(kabc, kabc1))
+print("\nkabc: {0}\nkabc1: {1}".format(kabc, kabc1))
