@@ -24,7 +24,30 @@ DISCONNECT_USER = "dcc075/users/disconnect"
 N_USERS     = 0
 USERS       = []
 
-gen_params = False
+def generate_session_parameters():
+    delta = 1
+    alpha = 1
+    beta = 1
+    temp_q = 1
+
+    for i in range(m):
+        p = sympy.sieve[random.randrange(psize)]
+        pm.append(p)
+        temp_q *= p
+
+    for i in range(n):
+        p = sympy.sieve[random.randrange(psize)]
+        while p in pm:
+            p = sympy.sieve[random.randrange(psize)]
+        pn.append(p)
+        delta *= pow(p, 3)
+        alpha *= pow(p, 2)*(p-1)
+        beta *= p*(p-1)*temp_q
+
+    params["alpha"]         = alpha
+    params["delta"]         = delta
+    params["beta"]          = beta
+    params["totient_delta"] = totient(delta)
 
 def on_message(client, userdata, message):
     global N_USERS, USERS
@@ -52,32 +75,6 @@ def on_message(client, userdata, message):
             N_USERS -= 1
             print("\n %s disconnected." % (message.payload))
             print("Users: {}".format(USERS))
-
-def generate_session_parameters():
-    delta = 1
-    alpha = 1
-    beta = 1
-    temp_q = 1
-
-    for i in range(m):
-        p = sympy.sieve[random.randrange(psize)]
-        pm.append(p)
-        temp_q *= p
-
-    for i in range(n):
-        p = sympy.sieve[random.randrange(psize)]
-        while p in pm:
-            p = sympy.sieve[random.randrange(psize)]
-        pn.append(p)
-        delta *= pow(p, 3)
-        alpha *= pow(p, 2)*(p-1)
-        beta *= p*(p-1)*temp_q
-
-    params["alpha"]         = alpha
-    params["delta"]         = delta
-    params["beta"]          = beta
-    params["totient_delta"] = totient(delta)
-
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
@@ -112,9 +109,7 @@ client.subscribe("dcc075/users", qos=0)
 try:
     while True:
         pass
-        #value = input('Enter the message:')
-        #client.publish("dcc075Enviar",value)
-    
+       
 except KeyboardInterrupt:
     client.disconnect()
     client.loop_stop()
