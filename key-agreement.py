@@ -29,8 +29,11 @@ for i in range(n):
     alpha *= pow(p, 2)*(p-1)
     beta *= p*(p-1)*temp_q
 
-print("alpha divides beta^2? rest of division: {0}".format(pow(beta,2) % alpha))
-print("alpha divides beta? rest of division: {0}".format(beta % alpha))
+assert pow(beta,2) % alpha == 0, 'alpha does not divide beta^2'
+assert beta % alpha != 0, 'alpha divides beta'
+
+print('beta % alpha', beta % alpha)
+
 print("pn: {0}\npm: {1}\n".format(pn, pm))
 
 totient_delta = totient(delta)
@@ -55,20 +58,24 @@ while xb1*gamma % totient_delta == 0:
     xb1 = random.randrange(totient_delta)
 gamma1 = alpha*pow(xa1,2) + beta*xb1
 
+# Calcula chave de sessao
 kab = pow(y, gamma1 * xb, delta)
 kba = pow(y, gamma * xb1, delta)
 
+assert kab == kba, 'Chaves de sessao sao diferentes'
 print("\nkab: {0}\nkba: {1}".format(kab, kba))
 
 # Carlos entra na rede
 # alice calcula gamma2 e xa2
 xa2 = random.randrange(1,delta)
 gamma2 = alpha*pow(xa2, 2) + beta*kab
-#alice escolhe y
+
+# Alice escolhe y
 y = random.randrange(delta)
 while sympy.igcd(y, delta) != 1:
     y = random.randrange(delta)
-# carlos escolhe xc1, xc2 e calcula gamma3
+
+# Carlos escolhe xc1, xc2 e calcula gamma3
 xc1 = random.randrange(1,delta)
 xc2 = random.randrange(1,totient_delta)
 while xc2*gamma2 % totient_delta == 0:
@@ -77,6 +84,7 @@ gamma3 = alpha*pow(xa2, 2) + beta*xc2
 
 # alice e bob calculam kabc
 kabc = pow(y, gamma3*kab, delta)
+
 #carlos calcula kabc
 kabc1 = pow(y, gamma2*xc2, delta)
 
