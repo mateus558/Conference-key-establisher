@@ -25,6 +25,13 @@ COMMAND_USER = "dcc075/users/command"
 N_USERS     = 0
 USERS       = []
 
+def broadcast_to_users(command):
+    print()
+    for user in USERS:
+        msg = user.decode("utf-8") + "_{}".format(command)
+        client.publish(COMMAND_USER, msg)
+    
+
 def generate_session_parameters():
     delta = 1
     alpha = 1
@@ -86,6 +93,7 @@ def on_connect(client, userdata, flags, rc):
     else:
  
         print("Connection failed")
+    
     client.subscribe(CONNECT_USER, qos=0)
     client.subscribe(DISCONNECT_USER, qos=0)
 
@@ -105,17 +113,13 @@ client.loop_start()        #start the loop
 while Connected != True:    #Wait for connection
     time.sleep(0.1)
 
-client.subscribe("dcc075/users", qos=0)
  
 try:
     while True:
         pass
        
 except KeyboardInterrupt:
-    print()
-    for user in USERS:
-        msg = user.decode("utf-8") + "_disconnect"
-        client.publish(COMMAND_USER, msg)
+    broadcast_to_users("disconnect")
     while len(USERS) > 0:
         pass
     client.disconnect()
