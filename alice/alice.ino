@@ -7,9 +7,9 @@
 //defines:
 //defines de id mqtt e tópicos para publicação e subscribe
 #define TOPICO_SUBSCRIBE "dcc075Enviar"     //tópico MQTT de escuta
-#define TOPICO_PUBLISH   "dcc075Receber"    //tópico MQTT de envio de informações para Broker
-#define TOPICO_CONNECT   "dcc075/users"                                             //IMPORTANTE: recomendamos fortemente alterar os nomes
-                                                   //            desses tópicos. Caso contrário, há grandes
+#define TOPICO_DISCONNECT   "dcc075/users/disconnect"    //tópico MQTT de envio de informações para Broker
+#define TOPICO_CONNECT   "dcc075/users/connect"                                             //IMPORTANTE: recomendamos fortemente alterar os nomes
+#define TOPICO_COMMAND   "dcc075/users/command"                                  //            desses tópicos. Caso contrário, há grandes
                                                    //            chances de você controlar e monitorar o NodeMCU
                                                    //            de outra pessoa.
 
@@ -36,8 +36,8 @@
 
 
 // WIFI
-const char* SSID = "seguranca"; // SSID / nome da rede WI-FI que deseja se conectar
-const char* PASSWORD = "12345678"; // Senha da rede WI-FI que deseja se conectar
+const char* SSID = "TP-LINK_3319A2"; // SSID / nome da rede WI-FI que deseja se conectar
+const char* PASSWORD = "3&SnaW@E$NEK"; // Senha da rede WI-FI que deseja se conectar
  
 // MQTT
 const char* BROKER_MQTT = "broker.hivemq.com";
@@ -52,6 +52,7 @@ char EstadoSaida = '0';  //variável que armazena o estado atual da saída
 char EstadoSaidaAnt = '1';
 String msg_ant = "";
 bool sent = false;
+bool on_net = true; 
  
 //Prototypes
 void initSerial();
@@ -105,7 +106,33 @@ void initMQTT()
     MQTT.setServer(BROKER_MQTT, BROKER_PORT);   //informa qual broker e porta deve ser conectado
     MQTT.setCallback(mqtt_callback);            //atribui função de callback (função chamada quando qualquer informação de um dos tópicos subescritos chega)
 }
- 
+
+char StrContains(const char *str, const char *sfind)
+{
+    char found = 0;
+    char index = 0;
+    char len;
+
+    len = strlen(str);
+    
+    if (strlen(sfind) > len) {
+        return 0;
+    }
+    while (index < len) {
+        if (str[index] == sfind[found]) {
+            found++;
+            if (strlen(sfind) == found) {
+                return 1;
+            }
+        }
+        else {
+            found = 0;
+        }
+        index++;
+    }
+    return 0;
+}
+
 //Função: função de callback 
 //        esta função é chamada toda vez que uma informação de 
 //        um dos tópicos subescritos chega)
@@ -113,7 +140,7 @@ void initMQTT()
 //Retorno: nenhum
 void mqtt_callback(char* topic, byte* payload, unsigned int length) 
 {
-    String msg;
+    String msg, _topic;
 
     //obtem a string do payload recebido
     for(int i = 0; i < length; i++) 
@@ -121,22 +148,22 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length)
        char c = (char)payload[i];
        msg += c;
     }
+    for(int i = 0; topic[i] != '\0'; i++)
+    {
+       char c = (char)topic[i];
+       _topic += c;
+    }
     sent = false;
     //toma ação dependendo da string recebida:
     //verifica se deve colocar nivel alto de tensão na saída D0:
     //IMPORTANTE: o Led já contido na placa é acionado com lógica invertida (ou seja,
     //enviar HIGH para o output faz o Led apagar / enviar LOW faz o Led acender)
-    if (msg.equals("L"))
-    {
-        digitalWrite(D0, LOW);
-        EstadoSaida = '1';
-    }
-
-    //verifica se deve colocar nivel alto de tensão na saída D0:
-    if (msg.equals("D"))
-    {
-        digitalWrite(D0, HIGH);
-        EstadoSaida = '0';
+    if(_topic.equals(TOPICO_COMMAND) && StrContains(msg.c_str(), ID_MQTT)){
+      if(StrContains(msg.c_str(), "disconnect")){
+        MQTT.publish(TOPICO_DISCONNECT, ID_MQTT);
+        Serial.println("- Disconectado da rede.");
+        on_net = false;
+      }
     }
     delay(500);
 }
@@ -155,7 +182,9 @@ void reconnectMQTT()
         {
             Serial.println("Conectado com sucesso ao broker MQTT!");
             MQTT.subscribe(TOPICO_SUBSCRIBE);
+            MQTT.subscribe(TOPICO_COMMAND);
             MQTT.publish(TOPICO_CONNECT, ID_MQTT);
+            on_net = true;
         } 
         else 
         {
@@ -210,15 +239,15 @@ void VerificaConexoesWiFIEMQTT(void)
 void EnviaEstadoOutputMQTT(void)
 {
     if(sent) return;
-    if (EstadoSaida == '0'){
+    /*if (EstadoSaida == '0'){
       MQTT.publish(TOPICO_PUBLISH, "D");
     }
     if (EstadoSaida == '1'){
       MQTT.publish(TOPICO_PUBLISH, "L");
     }
-    
+    */
     sent = true;
-    Serial.println("- Estado da saida D0 enviado ao broker!");
+    //Serial.println("- Estado da saida D0 enviado ao broker!");
     delay(1000);
 }
 
@@ -237,13 +266,20 @@ void InitOutput(void)
 //programa principal
 void loop() 
 {   
-    //garante funcionamento das conexões WiFi e ao broker MQTT
-    VerificaConexoesWiFIEMQTT();
-
+    
     //envia o status de todos os outputs para o Broker no protocolo esperado
-    EnviaEstadoOutputMQTT();
+    //EnviaEstadoOutputMQTT();
     
     //keep-alive da comunicação com broker MQTT
-    MQTT.loop();
+    if(on_net){
+      //garante funcionamento das conexões WiFi e ao broker MQTT
+      VerificaConexoesWiFIEMQTT();
+      MQTT.loop();
+    }else if(MQTT.connected()){
+      while(MQTT.connected()){
+        MQTT.disconnect();
+        on_net = false;
+      }
+    }
     delay(500);
 }

@@ -21,6 +21,7 @@ m = 3
 
 CONNECT_USER = "dcc075/users/connect"
 DISCONNECT_USER = "dcc075/users/disconnect"
+COMMAND_USER = "dcc075/users/command"
 N_USERS     = 0
 USERS       = []
 
@@ -111,5 +112,12 @@ try:
         pass
        
 except KeyboardInterrupt:
+    print()
+    for user in USERS:
+        msg = user.decode("utf-8") + "_disconnect"
+        client.publish(COMMAND_USER, msg)
+    while len(USERS) > 0:
+        pass
     client.disconnect()
     client.loop_stop()
+
