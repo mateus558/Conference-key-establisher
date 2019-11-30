@@ -30,7 +30,7 @@ def broadcast_to_users(command):
     for user in USERS:
         msg = user.decode("utf-8") + "_{}".format(command)
         client.publish(COMMAND_USER, msg)
-    
+        print("- Command \'{0}\' sent to \'{1}\'.".format(command, user))
 
 def generate_session_parameters():
     delta = 1
@@ -113,7 +113,6 @@ client.loop_start()        #start the loop
 while Connected != True:    #Wait for connection
     time.sleep(0.1)
 
- 
 try:
     while True:
         pass
