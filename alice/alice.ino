@@ -1,6 +1,3 @@
-//Programa: NodeMCU e MQTT - Controle e Monitoramento IoT
-//Autor: Pedro Bertoleti
-
 #include <ESP8266WiFi.h> // Importa a Biblioteca ESP8266WiFi
 #include <PubSubClient.h> // Importa a Biblioteca PubSubClient
 #include <BigNumber.h>
@@ -8,15 +5,18 @@
 //defines:
 //defines de id mqtt e tópicos para publicação e subscribe
 #define TOPICO_DISCONNECT   "dcc075/users/disconnect"    //tópico MQTT de envio de informações para Broker
-#define TOPICO_CONNECT      "dcc075/users/connect"                                
+#define TOPICO_CONNECT      "dcc075/users/connect" 
+#define TOPICO_NUSERS       "dcc075/users/number_users"                                
 #define TOPICO_ALPHA        "dcc075/params/alpha"
 #define TOPICO_BETA         "dcc075/params/beta"
 #define TOPICO_DELTA        "dcc075/params/delta"
 #define TOPICO_TOTIENT      "dcc075/params/totient_delta"
+#define TOPICO_GAMMA        "dcc075/params/gamma"
+#define TOPICO_GAMMA1       "dcc075/params/gamma1"
+#define TOPICO_Y            "dcc075/params/y"
 #define TOPICO_COMMAND      "dcc075/users/command"                                
-      
 
-// ATENCAO: coloque um id unico. Sugestao -> iotGrupo1, iotGrupo2 e assim por diante.                                                    
+// ATENCAO: coloque um id unico.                                                     
 #define ID_MQTT  "Alice"     //id mqtt (para identificação de sessão)
                                //IMPORTANTE: este deve ser único no broker (ou seja, 
                                //            se um client MQTT tentar entrar com o mesmo 
@@ -44,21 +44,19 @@ const char* PASSWORD = "3&SnaW@E$NEK"; // Senha da rede WI-FI que deseja se cone
  
 // MQTT
 const char* BROKER_MQTT = "broker.hivemq.com";
-//const char* BROKER_MQTT = "iot.eclipse.org"; //URL do broker MQTT que se deseja utilizar
 int BROKER_PORT = 1883; // Porta do Broker MQTT
 
 
 //Variáveis e objetos globais
 WiFiClient espClient; // Cria o objeto espClient
 PubSubClient MQTT(espClient); // Instancia o Cliente MQTT passando o objeto espClient
-String msg_ant = "";
-bool sent = false;
 bool on_net = true; 
 bool params_received = false;
-String alpha;
-String beta;
-String delta;
-String totient_delta;
+bool gamma_computed = false;
+String alpha, beta, delta, totient_delta, gamma1, gamma2, y;
+String xb1;
+size_t n_users = 0, server_id = 0;
+
 //Prototypes
 void initSerial();
 void initWiFi();
@@ -66,7 +64,6 @@ void initMQTT();
 void reconectWiFi(); 
 void mqtt_callback(char* topic, byte* payload, unsigned int length);
 void VerificaConexoesWiFIEMQTT(void);
-void InitOutput(void);
 
 /* 
  *  Implementações das funções
@@ -76,7 +73,6 @@ void setup()
     //inicializações:
     BigNumber::begin();
     randomSeed(analogRead(A0));
-    InitOutput();
     initSerial();
     initWiFi();
     initMQTT();
@@ -181,8 +177,53 @@ char StrContains(const char *str, const char *sfind)
     }
     return 0;
 }
+BigNumber pow_mod(BigNumber &x, BigNumber &y, BigNumber &z){
+    BigNumber number = 1;
+    BigNumber two = "2";
+    while (y){
+      if (y & 1)
+          number = number * x % z;
+      y = y / two;
+      x = x * x % z;
+    }
+    return number;
+}
 
-void compute_session_key(){
+BigNumber compute_session_key(BigNumber &_gamma, BigNumber &xb){
+  BigNumber _delta = (char*)delta.c_str();
+  BigNumber _y     = (char*)y.c_str();
+  BigNumber mult   = _gamma * xb;
+  return pow_mod(_y, mult , _delta);
+}
+
+void compute_gamma1(){
+  BigNumber _alpha         = (char*)alpha.c_str();
+  BigNumber _beta          = (char*)beta.c_str();
+  BigNumber _delta         = (char*)delta.c_str();
+  BigNumber _gamma         = (char*)gamma1.c_str();
+  BigNumber _totient_delta = (char*)totient_delta.c_str();
+    
+  char r[100] = "";
+  randomCharArray((char*)delta.c_str(), r);
+  BigNumber xa = r;
+  char s[100] = "";
+  randomCharArray((char*)totient_delta.c_str(), s);
+  BigNumber xb = s;
+ 
+  while(xb*_gamma % _totient_delta == 0){
+    char t[100] = "";
+    randomCharArray((char*)totient_delta.c_str(), t);
+    xb = t;
+  }
+  BigNumber gamma2 = _alpha * xa.pow(2) + _beta * xb;
+  MQTT.publish(TOPICO_GAMMA1, gamma2.toString());
+  BigNumber session_key = compute_session_key(_gamma, xb);
+  Serial.println("- Session key computed.");
+  Serial.print("Session key: ");
+  Serial.println(session_key);
+}
+
+void compute_gamma(){
   BigNumber _alpha         = (char*)alpha.c_str();
   BigNumber _beta          = (char*)beta.c_str();
   BigNumber _delta         = (char*)delta.c_str();
@@ -202,18 +243,23 @@ void compute_session_key(){
   char s[100] = "";
   randomCharArray((char*)totient_delta.c_str(), s);
   BigNumber xb = s;
- 
+  xb1 = xb.toString();
+  
   while(xb*_beta % _totient_delta == 0){
     char t[100] = "";
     randomCharArray((char*)totient_delta.c_str(), t);
     xb = t;
   }
-  BigNumber gamma = _alpha * xa.pow(2) + _beta * xb;
+  BigNumber _gamma = _alpha * xa.pow(2) + _beta * xb;
+  gamma_computed = true;
+  MQTT.publish(TOPICO_GAMMA, _gamma.toString());
+  MQTT.publish(TOPICO_DELTA, _delta.toString());
+  MQTT.publish(TOPICO_TOTIENT, _totient_delta.toString());
   Serial.println();
   Serial.println(String(String("- Gamma generated by ") + ID_MQTT + String(".")));
   Serial.println();
   Serial.print("Gamma: ");
-  Serial.println(gamma);
+  Serial.println(_gamma);
 }
 
 //Função: função de callback 
@@ -225,19 +271,22 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length)
 {
     String msg, _topic;
 
-    //obtem a string do payload recebido
-    for(int i = 0; i < length; i++) 
-    {
-       char c = (char)payload[i];
-       msg += c;
-    }
     //obtem a string do topico recebido
     for(int i = 0; topic[i] != '\0'; i++)
     {
        char c = (char)topic[i];
        _topic += c;
     }
-    sent = false;
+        //obtem a string do payload recebido
+    for(int i = 0; i < length; i++) 
+    {
+       char c = (char)payload[i];
+       if(_topic.equals(TOPICO_NUSERS)){
+       if(isDigit(c))
+          msg += c;
+       }else msg += c;
+    }
+    
     //toma ação dependendo da string recebida:
     if(_topic.equals(TOPICO_COMMAND) && StrContains(msg.c_str(), ID_MQTT)){
       if(StrContains(msg.c_str(), "disconnect")){
@@ -246,24 +295,65 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length)
         on_net = false;
       }
     }
-    if(_topic.equals(TOPICO_ALPHA)){
-      alpha = String(msg);
+
+    if(_topic.equals(TOPICO_NUSERS) && n_users == 0){
+      n_users = msg.toInt();
+      server_id = n_users;
     }
-    if(_topic.equals(TOPICO_BETA)){
-      beta = String(msg);
+    if(_topic.equals(TOPICO_Y)){
+      y = String(msg);
     }
-    if(_topic.equals(TOPICO_DELTA)){
-      delta = String(msg);
-    }
-    if(_topic.equals(TOPICO_TOTIENT)){
-      totient_delta = String(msg);
+    if(!gamma_computed && server_id == 1){
+      if(_topic.equals(TOPICO_ALPHA)){
+        alpha = String(msg);
+      }
+      if(_topic.equals(TOPICO_BETA)){
+        beta = String(msg);
+      }
+      if(_topic.equals(TOPICO_DELTA)){
+        delta = String(msg);
+      }
+      if(_topic.equals(TOPICO_TOTIENT)){
+        totient_delta = String(msg);
+      }
+
+      if(alpha.length() > 0 && beta.length() > 0 && delta.length() > 0 && totient_delta.length() > 0){
+        Serial.println("- Session parameters received.");
+        params_received = true;
+        compute_gamma();
+      }
+    }else if(server_id > 1){
+      if(_topic.equals(TOPICO_ALPHA)){
+        alpha = String(msg);
+      }
+      if(_topic.equals(TOPICO_GAMMA)){
+        gamma1 = String(msg);
+      }
+      if(_topic.equals(TOPICO_DELTA)){
+        delta = String(msg);
+      }
+      if(_topic.equals(TOPICO_TOTIENT)){
+        totient_delta = String(msg);
+      }
+      if(gamma1.length() > 0 && delta.length() > 0 && alpha.length() > 0 && totient_delta.length() > 0){
+        Serial.println("- Gamma and delta parameters received.");
+        compute_gamma1();
+      }
     }
 
-    if(alpha.length() > 0 && beta.length() > 0 && delta.length() > 0 && totient_delta.length() > 0){
-      Serial.println("- Session parameters received.");
-      params_received = true;
-      compute_session_key();
-     // Serial.println(session_key);
+    if(gamma_computed && server_id == 1){
+      if(_topic.equals(TOPICO_GAMMA1)){
+        gamma2 = String(msg);
+      }
+      if(y.length() > 0 && gamma2.length() > 0 && xb1.length() > 0 && delta.length() > 0){
+        BigNumber _gamma2 = (char*)gamma2.c_str();
+        BigNumber _xb1 = (char*)xb1.c_str();
+        
+        BigNumber session_key = compute_session_key(_gamma2, _xb1);
+        Serial.println("- Session key computed.");
+        Serial.print("Session key: ");
+        Serial.println(session_key);
+      }
     }
     delay(500);
 }
@@ -286,6 +376,9 @@ void reconnectMQTT()
             MQTT.subscribe(TOPICO_BETA);
             MQTT.subscribe(TOPICO_DELTA);
             MQTT.subscribe(TOPICO_TOTIENT);
+            MQTT.subscribe(TOPICO_NUSERS);
+            MQTT.subscribe(TOPICO_GAMMA);
+            MQTT.subscribe(TOPICO_GAMMA1);
             MQTT.publish(TOPICO_CONNECT, ID_MQTT);
             on_net = true;
         } 
@@ -336,36 +429,9 @@ void VerificaConexoesWiFIEMQTT(void)
      reconectWiFi(); //se não há conexão com o WiFI, a conexão é refeita
 }
 
-//Função: envia ao Broker o estado atual do output 
-//Parâmetros: nenhum
-//Retorno: nenhum
-void EnviaEstadoOutputMQTT(void)
-{
-    if(sent) return;
-    sent = true;
-    //Serial.println("- Estado da saida D0 enviado ao broker!");
-    delay(1000);
-}
-
-//Função: inicializa o output em nível lógico baixo
-//Parâmetros: nenhum
-//Retorno: nenhum
-void InitOutput(void)
-{
-    //IMPORTANTE: o Led já contido na placa é acionado com lógica invertida (ou seja,
-    //enviar HIGH para o output faz o Led apagar / enviar LOW faz o Led acender)
-    pinMode(D0, OUTPUT);
-    digitalWrite(D0, HIGH);          
-}
-
-
 //programa principal
 void loop() 
 {   
-    
-    //envia o status de todos os outputs para o Broker no protocolo esperado
-    //EnviaEstadoOutputMQTT();
-    
     //keep-alive da comunicação com broker MQTT
     if(on_net){
       //garante funcionamento das conexões WiFi e ao broker MQTT
