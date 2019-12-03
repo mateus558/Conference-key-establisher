@@ -45,12 +45,12 @@ def generate_session_parameters():
     beta = 1
     temp_q = 1
 
-    for i in range(m):
+    for _ in range(m):
         p = sympy.sieve[random.randrange(psize)]
         pm.append(p)
         temp_q *= p
 
-    for i in range(n):
+    for _ in range(n):
         p = sympy.sieve[random.randrange(psize)]
         while p in pm:
             p = sympy.sieve[random.randrange(psize)]
@@ -71,6 +71,7 @@ def generate_session_parameters():
 
 def on_message(client, userdata, message):
     global N_USERS, USERS
+    client.publish(PARAM_Y, params["y"])
     if message.topic == CONNECT_USER:
         if message.payload not in USERS:
             USERS.append(message.payload)
@@ -87,11 +88,10 @@ def on_message(client, userdata, message):
                 client.publish(PARAM_BETA, params["beta"])
                 client.publish(PARAM_TOTIENTDELTA, params["totient_delta"])
                 print("Parameters: {}".format(params))
-            
-            client.publish(PARAM_Y, params["y"])
         else:
             print("{} is already connected.".format(message.payload))
-
+    
+   
     if message.topic == DISCONNECT_USER:
         if message.payload in USERS:
             USERS = [user for user in USERS if message.payload != user]
