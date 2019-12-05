@@ -26,11 +26,14 @@ NUMBER_USERS        = "dcc075/users/number_users"
 COMMAND_USER        = "dcc075/users/command"
 PARAM_ALPHA         = "dcc075/params/alpha"
 PARAM_BETA          = "dcc075/params/beta"
-PARAM_Y             = "dcc075/params/y"
+PARAM_Y             = "dcc075/params/y_param"
 PARAM_DELTA         = "dcc075/params/delta"
 PARAM_TOTIENTDELTA  = "dcc075/params/totient_delta"
+SESSION_KEY_BOB     = "dcc075/sessionkey/bob"
+SESSION_KEY_ALICE   = "dcc075/sessionkey/alice"
 N_USERS     = 0
 USERS       = []
+sess_param_computed = False
 
 def broadcast_to_users(command):
     print()
@@ -40,6 +43,7 @@ def broadcast_to_users(command):
         print("- Command \'{0}\' sent to \'{1}\'.".format(command, user))
 
 def generate_session_parameters():
+    global sess_param_computed
     delta = 1
     alpha = 1
     beta = 1
@@ -63,6 +67,7 @@ def generate_session_parameters():
     while sympy.igcd(y, delta) != 1:
         y = random.randrange(delta)
 
+    sess_param_computed     = True
     params["alpha"]         = alpha
     params["delta"]         = delta
     params["beta"]          = beta
@@ -71,7 +76,7 @@ def generate_session_parameters():
 
 def on_message(client, userdata, message):
     global N_USERS, USERS
-    client.publish(PARAM_Y, params["y"])
+    
     if message.topic == CONNECT_USER:
         if message.payload not in USERS:
             USERS.append(message.payload)
@@ -83,15 +88,28 @@ def on_message(client, userdata, message):
             if N_USERS == 1:
                 print("\nGenerating session parameters...")
                 generate_session_parameters()
-                client.publish(PARAM_ALPHA, params["alpha"])
-                client.publish(PARAM_DELTA, params["delta"])
-                client.publish(PARAM_BETA, params["beta"])
-                client.publish(PARAM_TOTIENTDELTA, params["totient_delta"])
                 print("Parameters: {}".format(params))
         else:
             print("{} is already connected.".format(message.payload))
+
+        if sess_param_computed:
+            time.sleep(0.1)
+            client.publish(PARAM_Y, params["y"])
+            time.sleep(0.5)
+            client.publish(PARAM_ALPHA, params["alpha"])
+            time.sleep(0.1)
+            client.publish(PARAM_DELTA, params["delta"])
+            time.sleep(0.1)
+            client.publish(PARAM_BETA, params["beta"])
+            time.sleep(0.1)
+            client.publish(PARAM_TOTIENTDELTA, params["totient_delta"])
     
-   
+    if message.topic == "dcc075/sessionkey/bob":
+        print("Bob session key: " + message.payload)
+    
+    if message.topic == "dcc075/sessionkey/alice":
+        print("Alice session key: " + message.payload)
+
     if message.topic == DISCONNECT_USER:
         if message.payload in USERS:
             USERS = [user for user in USERS if message.payload != user]
@@ -111,6 +129,8 @@ def on_connect(client, userdata, flags, rc):
     
     client.subscribe(CONNECT_USER, qos=0)
     client.subscribe(DISCONNECT_USER, qos=0)
+    client.subscribe(SESSION_KEY_BOB, qos=0)
+    client.subscribe(SESSION_KEY_ALICE, qos=0)
 
  
 Connected = False   #global variable for the state of the connection
@@ -130,7 +150,7 @@ while Connected != True:    #Wait for connection
 
 try:
     while True:
-        pass
+       pass
        
 except KeyboardInterrupt:
     broadcast_to_users("disconnect")
