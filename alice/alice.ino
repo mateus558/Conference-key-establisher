@@ -5,8 +5,8 @@
 //defines:
 //defines de id mqtt e tópicos para publicação e subscribe
 #define TOPICO_DISCONNECT   "dcc075/users/disconnect"    //tópico MQTT de envio de informações para Broker
-#define TOPICO_CONNECT      "dcc075/users/connect" 
-#define TOPICO_NUSERS       "dcc075/users/number_users"                                
+#define TOPICO_CONNECT      "dcc075/users/connect"
+#define TOPICO_NUSERS       "dcc075/users/number_users"
 #define TOPICO_ALPHA        "dcc075/params/alpha"
 #define TOPICO_BETA         "dcc075/params/beta"
 #define TOPICO_DELTA        "dcc075/params/delta"
@@ -16,15 +16,12 @@
 #define TOPICO_Y            "dcc075/params/y_param"
 #define TOPICO_COMMAND      "dcc075/users/command"
 #define SESSION_KEY_ALICE   "dcc075/sessionkey/alice"
-#define SESSION_KEY_BOB     "dcc075/sessionkey/bob"                             
+#define SESSION_KEY_BOB     "dcc075/sessionkey/bob"
 
-// ATENCAO: coloque um id unico.                                                     
-#define ID_MQTT  "Alice"     //id mqtt (para identificação de sessão)
-                               //IMPORTANTE: este deve ser único no broker (ou seja, 
-                               //            se um client MQTT tentar entrar com o mesmo 
-                               //            id de outro já conectado ao broker, o broker 
-                               //            irá fechar a conexão de um deles).
-                               
+// ATENCAO: coloque um id unico.
+#define ID_MQTT  "Bob"     //id mqtt (para identificação de sessão)
+#define pubQoS_MQTT 2
+#define subQoS_MQTT 2
 
 //defines - mapeamento de pinos do NodeMCU
 #define D0    16
@@ -43,7 +40,7 @@
 // WIFI
 const char* SSID = "TP-LINK_3319A2"; // SSID / nome da rede WI-FI que deseja se conectar
 const char* PASSWORD = "3&SnaW@E$NEK"; // Senha da rede WI-FI que deseja se conectar
- 
+
 // MQTT
 const char* BROKER_MQTT = "broker.hivemq.com";
 int BROKER_PORT = 1883; // Porta do Broker MQTT
@@ -52,7 +49,7 @@ int BROKER_PORT = 1883; // Porta do Broker MQTT
 //Variáveis e objetos globais
 WiFiClient espClient; // Cria o objeto espClient
 PubSubClient MQTT(espClient); // Instancia o Cliente MQTT passando o objeto espClient
-bool on_net = true; 
+bool on_net = true;
 bool params_received = false;
 bool gamma_computed = false;
 bool session_key_computed = false;
@@ -64,14 +61,14 @@ size_t n_users = 0, server_id = 0;
 void initSerial();
 void initWiFi();
 void initMQTT();
-void reconectWiFi(); 
+void reconectWiFi();
 void mqtt_callback(char* topic, byte* payload, unsigned int length);
 void VerificaConexoesWiFIEMQTT(void);
 
-/* 
+/*
  *  Implementações das funções
  */
-void setup() 
+void setup()
 {
     //inicializações:
     BigNumber::begin();
@@ -80,8 +77,8 @@ void setup()
     initWiFi();
     initMQTT();
 }
- 
-//Função: inicializa comunicação serial com baudrate 115200 (para fins de monitorar no terminal serial 
+
+//Função: inicializa comunicação serial com baudrate 115200 (para fins de monitorar no terminal serial
 //        o que está acontecendo.
 //Parâmetros: nenhum
 //Retorno: nenhum
@@ -92,22 +89,22 @@ void initSerial(){
 //Função: inicializa e conecta-se na rede WI-FI desejada
 //Parâmetros: nenhum
 //Retorno: nenhum
-void initWiFi() 
+void initWiFi()
 {
     delay(10);
     Serial.println("------Conexao WI-FI------");
     Serial.print("Conectando-se na rede: ");
     Serial.println(SSID);
     Serial.println("Aguarde");
-    
+
     reconectWiFi();
 }
- 
-//Função: inicializa parâmetros de conexão MQTT(endereço do 
+
+//Função: inicializa parâmetros de conexão MQTT(endereço do
 //        broker, porta e seta função de callback)
 //Parâmetros: nenhum
 //Retorno: nenhum
-void initMQTT() 
+void initMQTT()
 {
     MQTT.setServer(BROKER_MQTT, BROKER_PORT);   //informa qual broker e porta deve ser conectado
     MQTT.setCallback(mqtt_callback);            //atribui função de callback (função chamada quando qualquer informação de um dos tópicos subescritos chega)
@@ -147,9 +144,9 @@ int randomCharArray(char *s, char *r)
     }
     // if all nybbles are skipped, sum is at least 80
     // so we can use sum to generate at least one digit per iteration.
-    if (i < len && sum >= 80)   
+    if (i < len && sum >= 80)
     {
-      r[i++] = sum % 10 + '0'; 
+      r[i++] = sum % 10 + '0';
     }
   }
   r[len] = '\0';
@@ -162,7 +159,7 @@ char StrContains(const char *str, const char *sfind)
     char len;
 
     len = strlen(str);
-    
+
     if (strlen(sfind) > len) {
         return 0;
     }
@@ -199,7 +196,7 @@ void compute_gamma1(){
   BigNumber _delta         = (char*)delta.c_str();
   BigNumber _gamma         = (char*)gamma1.c_str();
   BigNumber _totient_delta = (char*)totient_delta.c_str();
-  
+
   Serial.print("Y: ");
   Serial.println(y);
   Serial.print("Alpha: ");
@@ -216,7 +213,7 @@ void compute_gamma1(){
   char s[100] = "";
   randomCharArray((char*)totient_delta.c_str(), s);
   BigNumber xb = s;
- 
+
   while(xb*_gamma % _totient_delta == 0){
     char t[100] = "";
     randomCharArray((char*)totient_delta.c_str(), t);
@@ -253,7 +250,7 @@ void compute_gamma(){
   randomCharArray((char*)totient_delta.c_str(), s);
   BigNumber xb = s;
   xb1 = xb.toString();
-  
+
   while(xb*_beta % _totient_delta == 0){
     char t[100] = "";
     randomCharArray((char*)totient_delta.c_str(), t);
@@ -269,12 +266,12 @@ void compute_gamma(){
   Serial.println(_gamma);
 }
 
-//Função: função de callback 
-//        esta função é chamada toda vez que uma informação de 
+//Função: função de callback
+//        esta função é chamada toda vez que uma informação de
 //        um dos tópicos subescritos chega)
 //Parâmetros: nenhum
 //Retorno: nenhum
-void mqtt_callback(char* topic, byte* payload, unsigned int length) 
+void mqtt_callback(char* topic, byte* payload, unsigned int length)
 {
     String msg, _topic;
 
@@ -285,7 +282,7 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length)
        _topic += c;
     }
         //obtem a string do payload recebido
-    for(int i = 0; i < length; i++) 
+    for(int i = 0; i < length; i++)
     {
        char c = (char)payload[i];
        if(_topic.equals(TOPICO_NUSERS)){
@@ -308,7 +305,7 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length)
       if(server_id == 0)server_id = n_users;
       Serial.println(server_id);
     }
-    
+
     if(!gamma_computed){
       if(_topic.equals(TOPICO_Y)){
         y = msg.c_str();
@@ -345,12 +342,12 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length)
       if(!session_key_computed && y.length() > 0 && gamma2.length() > 0 && xb1.length() > 0 && delta.length() > 0){
         BigNumber _gamma2 = (char*)gamma2.c_str();
         BigNumber _xb1 = (char*)xb1.c_str();
-        
+
         BigNumber session_key = compute_session_key(_gamma2, _xb1);
         MQTT.publish(SESSION_KEY_ALICE, session_key.toString());
       }
     }
-    
+
     if(server_id == 1 && !gamma_computed && alpha.length() > 0 && beta.length() > 0 && delta.length() > 0 && totient_delta.length() > 0){
         Serial.println("- Session parameters received.");
         params_received = true;
@@ -360,19 +357,19 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length)
         Serial.println("- Gamma and delta parameters received.");
         compute_gamma1();
     }
-    delay(500);
+    delay(100);
 }
- 
+
 //Função: reconecta-se ao broker MQTT (caso ainda não esteja conectado ou em caso de a conexão cair)
 //        em caso de sucesso na conexão ou reconexão, o subscribe dos tópicos é refeito.
 //Parâmetros: nenhum
 //Retorno: nenhum
 void reconnectMQTT(){
-    while (!MQTT.connected()) 
+    while (!MQTT.connected())
     {
         Serial.print("* Tentando se conectar ao Broker MQTT: ");
         Serial.println(BROKER_MQTT);
-        if (MQTT.connect(ID_MQTT)) 
+        if (MQTT.connect(ID_MQTT))
         {
             Serial.println("Conectado com sucesso ao broker MQTT!");
             MQTT.subscribe(TOPICO_COMMAND);
@@ -386,34 +383,32 @@ void reconnectMQTT(){
             MQTT.subscribe(TOPICO_Y);
             MQTT.publish(TOPICO_CONNECT, ID_MQTT);
             on_net = true;
-        } 
-        else 
-        {
+        }else{
             Serial.println("Falha ao reconectar no broker.");
             Serial.println("Havera nova tentatica de conexao em 2s");
             delay(2000);
         }
     }
 }
- 
+
 //Função: reconecta-se ao WiFi
 //Parâmetros: nenhum
 //Retorno: nenhum
-void reconectWiFi() 
+void reconectWiFi()
 {
-    //se já está conectado a rede WI-FI, nada é feito. 
+    //se já está conectado a rede WI-FI, nada é feito.
     //Caso contrário, são efetuadas tentativas de conexão
     if (WiFi.status() == WL_CONNECTED)
         return;
-        
+
     WiFi.begin(SSID, PASSWORD); // Conecta na rede WI-FI
-    
-    while (WiFi.status() != WL_CONNECTED) 
+
+    while (WiFi.status() != WL_CONNECTED)
     {
         delay(100);
         Serial.print(".");
     }
-  
+
     Serial.println();
     Serial.print("Conectado com sucesso na rede ");
     Serial.print(SSID);
@@ -421,22 +416,22 @@ void reconectWiFi()
     Serial.println(WiFi.localIP());
 }
 
-//Função: verifica o estado das conexões WiFI e ao broker MQTT. 
+//Função: verifica o estado das conexões WiFI e ao broker MQTT.
 //        Em caso de desconexão (qualquer uma das duas), a conexão
 //        é refeita.
 //Parâmetros: nenhum
 //Retorno: nenhum
 void VerificaConexoesWiFIEMQTT(void)
 {
-    if (!MQTT.connected()) 
+    if (!MQTT.connected())
         reconnectMQTT(); //se não há conexão com o Broker, a conexão é refeita
-    
+
      reconectWiFi(); //se não há conexão com o WiFI, a conexão é refeita
 }
 
 //programa principal
-void loop() 
-{   
+void loop()
+{
     //keep-alive da comunicação com broker MQTT
     if(on_net){
       if(n_users > 1){
