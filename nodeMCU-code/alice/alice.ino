@@ -19,7 +19,7 @@
 #define SESSION_KEY_BOB     "dcc075/sessionkey/bob"
 
 // ATENCAO: coloque um id unico.
-#define ID_MQTT  "Bob"     //id mqtt (para identificação de sessão)
+#define ID_MQTT  "Alice"     //id mqtt (para identificação de sessão)
 #define pubQoS_MQTT 2
 #define subQoS_MQTT 2
 
@@ -307,27 +307,27 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length)
     }
 
     if(!gamma_computed){
-      if(_topic.equals(TOPICO_Y)){
+      if(y.length() == 0 && _topic.equals(TOPICO_Y)){
         y = msg.c_str();
         Serial.println("y recebido.");
       }
-      if(_topic.equals(TOPICO_ALPHA)){
+      if(alpha.length() == 0 && _topic.equals(TOPICO_ALPHA)){
         alpha = msg.c_str();
         Serial.println("alpha recebido.");
       }
-      if(_topic.equals(TOPICO_BETA)){
+      if(beta.length() == 0 && _topic.equals(TOPICO_BETA)){
         beta = msg.c_str();
         Serial.println("beta recebido.");
       }
-      if(_topic.equals(TOPICO_DELTA)){
+      if(delta.length() == 0 && _topic.equals(TOPICO_DELTA)){
         delta = msg.c_str();
         Serial.println("delta recebido.");
       }
-      if(_topic.equals(TOPICO_TOTIENT)){
+      if(totient_delta.length() == 0 && _topic.equals(TOPICO_TOTIENT)){
         totient_delta = msg.c_str();
         Serial.println("totient recebido.");
       }
-      if(_topic.equals(TOPICO_GAMMA)){
+      if(gamma1.length() == 0 && _topic.equals(TOPICO_GAMMA)){
         Serial.println("gamma recebido.");
         gamma1 = msg.c_str();
       }

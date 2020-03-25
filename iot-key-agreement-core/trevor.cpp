@@ -202,28 +202,14 @@ mpz_int phi(mpz_int n)
     return ret;
 }
 
-void Trevor::generateSessionParameters()
-{
-    params["delta"] = 1;
-    params["alpha"] = 1;
-    params["beta"] = 1;
-    params["totient_delta"] = 0;
-    params["y"] = 0;
-
-    std::vector<int64_t> pm, pn;
-
-    int64_t limit = 1000;
-    auto primes = segmented_sieve(limit);
-
-    while(primes.size() < (m+n)) primes = segmented_sieve(limit);
-
+void Trevor::pattern_one(std::vector<int64_t> &pm, std::vector<int64_t> &pn, const std::vector<int64_t> &primes){
     std::vector<size_t> primes_ids(primes.size());
+    size_t i;
+    mpz_int temp_q = 1;
 
     std::iota(primes_ids.begin(), primes_ids.end(), 0);
     std::random_shuffle(primes_ids.begin(), primes_ids.end());
 
-    size_t i;
-    mpz_int temp_q = 1;
     for(i = 0; i < m; i++){
         int64_t p = primes[primes_ids[i]];
         pm.push_back(p);
@@ -241,6 +227,47 @@ void Trevor::generateSessionParameters()
         params["alpha"] *= (p_power / p) * (p-1);
         params["beta"] *= p*(p-1)*temp_q;
     }
+}
+
+void Trevor::pattern_two(std::vector<int64_t> &pm, std::vector<int64_t> &pn, const std::vector<int64_t> &primes){
+    std::vector<size_t> primes_ids(primes.size());
+    size_t i;
+    mpz_int temp_q = 1;
+
+    std::iota(primes_ids.begin(), primes_ids.end(), 0);
+    std::random_shuffle(primes_ids.begin(), primes_ids.end());
+
+    for(i = 0; i < m; i++){
+        int64_t p = primes[primes_ids[i]];
+        pm.push_back(p);
+        params["beta"] *= p;
+    }
+
+    for(; i < (m + n); i++){
+        int64_t p = primes[primes_ids[i]];
+        pn.push_back(p);
+        params["delta"] *= p;
+        params["alpha"] *= (p-1);
+    }
+
+}
+
+void Trevor::generateSessionParameters()
+{
+    params["delta"] = 1;
+    params["alpha"] = 1;
+    params["beta"] = 1;
+    params["totient_delta"] = 0;
+    params["y"] = 0;
+
+    std::vector<int64_t> pm, pn;
+
+    int64_t limit = 10000;
+    auto primes = segmented_sieve(limit);
+
+    while(primes.size() < (m+n)) primes = segmented_sieve(limit);
+
+    pattern_two(pm, pn, primes);
 
     std::random_device rd;     // only used once to initialise (seed) engine
     std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)

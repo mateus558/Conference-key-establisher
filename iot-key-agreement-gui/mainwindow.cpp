@@ -53,9 +53,12 @@ MainWindow::MainWindow(QWidget *parent) :
         i++;
     }
     file.close();
-    trevor = new Trevor(host, port.toInt(), username, password);
+    if(!host.isEmpty() || !port.isEmpty())
+        trevor = new Trevor(host, port.toInt(), username, password);
     trevor->setM(3);
     trevor->setN(3);
+    ui->lineEdit_m->setText(QString::number(3));
+    ui->lineEdit_n->setText(QString::number(3));
     QObject::connect(trevor, &Trevor::userConnected, this, &MainWindow::addUserToListView);
     QObject::connect(trevor, &Trevor::sessionKeyComputed, this, &MainWindow::addSessionKeyToView);
     QObject::connect(trevor, &Trevor::emitLogMessage, this, &MainWindow::addLogMessageToView);
@@ -71,6 +74,7 @@ MainWindow::MainWindow(QWidget *parent) :
             return (user == _user);
         }), users_list.end());
     });
+
 
 }
 
@@ -157,4 +161,13 @@ void MainWindow::on_pushButton_clear_clicked()
 {
     ui->listView->model()->removeRows(0, ui->listView->model()->rowCount());
     sesskey_list.erase(sesskey_list.begin(), sesskey_list.end());
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    int m = ui->lineEdit_m->text().toInt();
+    int n = ui->lineEdit_n->text().toInt();
+
+    trevor->setM(m);
+    trevor->setN(n);
 }

@@ -71,6 +71,9 @@ private:
     MQTTServer *m_mqtt;
     QVector<QString> users;
     QMap<QString, boost::multiprecision::mpz_int> params;
+
+    void pattern_one(std::vector<int64_t> &pm, std::vector<int64_t> &pn, const std::vector<int64_t> &primes);
+    void pattern_two(std::vector<int64_t> &pm, std::vector<int64_t> &pn, const std::vector<int64_t> &primes);
 };
 
 #endif // TREVOR_H
