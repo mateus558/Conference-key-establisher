@@ -126,6 +126,10 @@ void MainWindow::on_pushButton_connect_clicked()
         trevor->dropUsers();
         trevor->setNewSession();
         trevor->disconnectFromHost();
+        std::for_each(devices.begin(), devices.end(), [](Device *d){
+            delete d;
+        });
+        devices.clear();
         ui->pushButton_connect->setText("Connect");
     }
 }
@@ -175,4 +179,17 @@ void MainWindow::on_pushButton_clicked()
 void MainWindow::on_pushButton_new_device_clicked()
 {
     devices.push_back(new Device(this->host, this->port.toInt(), this->username, this->password));
+}
+
+void MainWindow::on_pushButton_remove_device_clicked()
+{
+    QModelIndex index = ui->listView_users->currentIndex();
+    QString device = index.data(Qt::DisplayRole).toString();
+    auto it = devices.begin();
+    size_t i;
+    for(i = 0; it != devices.end(); it++, i++){
+        if((*it)->getId_mqtt() == device) break;
+    }
+    delete devices[i];
+    devices.erase(it);
 }

@@ -28,6 +28,8 @@ public:
 
     void setPort(const quint16 &value);
 
+    void setIdMqtt(const QString &value);
+
 public slots:
     void onMessageReceived(const QByteArray &message, const QMqttTopicName &topic);
 
@@ -47,7 +49,7 @@ signals:
     void connected();
 private:
     QMqttClient *m_client;
-    QString host, username, password;
+    QString host, username, password, idMqtt;
     quint16 port;
 };
 

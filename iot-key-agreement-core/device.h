@@ -12,6 +12,8 @@ class IOTKEYAGREEMENTCORE_EXPORT Device: public QObject
 public:
     Device(const QString &host, const int port, const QString &user, const QString &password);
     ~Device();
+    QString getId_mqtt() const;
+
 private:
     void compute_gamma();
 

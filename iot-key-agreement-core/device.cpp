@@ -1,5 +1,6 @@
 #include "device.h"
 #include <boost/random.hpp>
+#include <random>
 
 const QString CONNECT_USER = "dcc075/users/connect";
 const QString DISCONNECT_USER = "dcc075/users/disconnect";
@@ -29,6 +30,7 @@ Device::Device(const QString &host, const int port, const QString &user, const Q
     generate_random_id(id, 10);
     id_mqtt = QString::fromStdString(id);
     qDebug() << "MQTT id: " << id_mqtt << "\n";
+    m_mqtt->setIdMqtt(id_mqtt);
     m_mqtt->connectToBroker();
 
     QObject::connect(m_mqtt, &MQTTServer::messageReceived, this, &Device::onMessageReceived);
@@ -37,13 +39,15 @@ Device::Device(const QString &host, const int port, const QString &user, const Q
 
 Device::~Device()
 {
-
+    m_mqtt->publish(DISCONNECT_USER, id_mqtt, 2);
+    m_mqtt->disconnectFromBroker();
 }
 
 void Device::compute_gamma()
 {
     mpz_int xb_beta, mod;
-    mt19937 mt;
+    std::random_device rd;
+    mt19937 mt(rd());
     uniform_int_distribution<mpz_int> uid(0, delta);
     uniform_int_distribution<mpz_int> uit(0, totient_delta);
 
@@ -109,6 +113,18 @@ void Device::onMessageReceived(const QByteArray &message, const QMqttTopicName &
         if(gamma_computed) m_mqtt->publish(PARAM_GAMMA, id_mqtt + QString("_") + QString::fromStdString(gamma.str()), 2);
         if(server_id == 0) server_id = n_users;
     }
+    if(topic_name == DISCONNECT_USER){
+        auto it = users.begin();
+        size_t i;
+        for(i = 0; it != users.end(); it++, i++){
+            if((*it) == message_content) break;
+        }
+        users.erase(it);
+        gammas.erase(gammas.begin()+i);
+        n_users--;
+        if(n_users > 1 && n_users == gammas.size()) compute_session_key();
+        qDebug() << QString("[") + id_mqtt + QString("]: ") + message_content << " disconnected.\n";
+    }
     if(!gamma_computed){
         if(y == 0 && topic_name == PARAM_Y){
             y = mpz_int(message_content.toStdString());
@@ -166,5 +182,11 @@ void Device::subscribeToTopics()
     m_mqtt->subscribe(PARAM_DELTA, 2);
     m_mqtt->subscribe(PARAM_TOTIENTDELTA, 2);
     m_mqtt->subscribe(PARAM_GAMMA, 2);
+    m_mqtt->subscribe(DISCONNECT_USER, 2);
     m_mqtt->publish(CONNECT_USER, id_mqtt);
+}
+
+QString Device::getId_mqtt() const
+{
+    return id_mqtt;
 }

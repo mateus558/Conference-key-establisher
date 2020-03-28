@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab_trevor">
        <attribute name="title">
@@ -250,7 +250,7 @@
             <item>
              <widget class="QLabel" name="label_list_users">
               <property name="text">
-               <string>Users connected</string>
+               <string>Devices connected</string>
               </property>
              </widget>
             </item>
@@ -294,12 +294,26 @@
               </property>
               <property name="minimumSize">
                <size>
-                <width>127</width>
+                <width>150</width>
                 <height>0</height>
                </size>
               </property>
               <property name="text">
                <string>Show Parameters</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="pushButton_new_device">
+              <property name="text">
+               <string>Create virtual device</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="pushButton_remove_device">
+              <property name="text">
+               <string>Remove device</string>
               </property>
              </widget>
             </item>
@@ -369,21 +383,8 @@
       </widget>
       <widget class="QWidget" name="tab_devices">
        <attribute name="title">
-        <string>Devices</string>
+        <string>Experiments</string>
        </attribute>
-       <widget class="QPushButton" name="pushButton_new_device">
-        <property name="geometry">
-         <rect>
-          <x>130</x>
-          <y>90</y>
-          <width>161</width>
-          <height>25</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>Create new device</string>
-        </property>
-       </widget>
       </widget>
      </widget>
     </item>

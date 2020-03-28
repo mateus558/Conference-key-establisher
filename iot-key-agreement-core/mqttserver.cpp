@@ -68,7 +68,10 @@ int MQTTServer::state()
 
 void MQTTServer::onMessageReceived(const QByteArray &message, const QMqttTopicName &topic)
 {
-    const QString content = QDateTime::currentDateTime().toString()
+    if(idMqtt.isEmpty()){
+        idMqtt = "Server";
+    }
+    const QString content = QString("[") + idMqtt + QString("]: ") +  QDateTime::currentDateTime().toString()
             + QLatin1String(" Received Topic: ")
             + topic.name()
             + QLatin1String(" Message: ")
@@ -106,6 +109,12 @@ void MQTTServer::updateLogStateChange()
                         + QString::number(m_client->state());
     qDebug() << content;
     emit logMessage(content);
+}
+
+void MQTTServer::setIdMqtt(const QString &value)
+{
+    m_client->setClientId(value);
+    idMqtt = value;
 }
 
 void MQTTServer::setPort(const quint16 &value)

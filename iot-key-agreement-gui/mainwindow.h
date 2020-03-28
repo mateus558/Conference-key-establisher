@@ -37,6 +37,8 @@ private slots:
 
     void on_pushButton_new_device_clicked();
 
+    void on_pushButton_remove_device_clicked();
+
 private:
     Trevor *trevor;
     QString host, port, username, password;

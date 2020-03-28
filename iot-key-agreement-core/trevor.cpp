@@ -204,9 +204,13 @@ void Trevor::pattern_one(std::vector<int64_t> &pm, std::vector<int64_t> &pn, con
     std::vector<size_t> primes_ids(primes.size());
     size_t i;
     mpz_int temp_q = 1;
+    std::random_device rd;
+    mt19937 mt(rd());
+    uniform_int_distribution<size_t> uid(0, primes.size());
 
-    std::iota(primes_ids.begin(), primes_ids.end(), 0);
-    std::random_shuffle(primes_ids.begin(), primes_ids.end());
+    std::generate(primes_ids.begin(), primes_ids.end(), [&mt, &uid](){
+        return uid(mt);
+    });
 
     for(i = 0; i < m; i++){
         int64_t p = primes[primes_ids[i]];
