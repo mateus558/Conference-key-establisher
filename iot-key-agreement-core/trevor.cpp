@@ -8,9 +8,13 @@
 #include <stdio.h>
 #include <stdint.h>
 #include<boost/multiprecision/number.hpp>
+#include <boost/random.hpp>
+
 #include "trevor.h"
 
 using namespace boost::multiprecision;
+using namespace boost::random;
+
 
 const QString CONNECT_USER = "dcc075/users/connect";
 const QString DISCONNECT_USER = "dcc075/users/disconnect";
@@ -21,8 +25,7 @@ const QString PARAM_BETA = "dcc075/params/beta";
 const QString PARAM_Y = "dcc075/params/y_param";
 const QString PARAM_DELTA = "dcc075/params/delta";
 const QString PARAM_TOTIENTDELTA = "dcc075/params/totient_delta";
-const QString SESSION_KEY_BOB = "dcc075/sessionkey/bob";
-const QString SESSION_KEY_ALICE = "dcc075/sessionkey/alice";
+const QString SESSION_KEY = "dcc075/sessionkey";
 
 const int64_t L1D_CACHE_SIZE = 32768;
 
@@ -118,14 +121,10 @@ void Trevor::onMessageReceived(const QByteArray &message, const QMqttTopicName &
             qDebug() << message_content << " is already connected.\n";
         }
     }
-
-    if(topic_name == SESSION_KEY_BOB){
-        emit sessionKeyComputed(QString("Bob"), message_content);
-        qDebug() << "\nBob session key: "  << message_content << "\n";
-    }
-    if(topic_name == SESSION_KEY_ALICE){
-        emit sessionKeyComputed(QString("Alice"), message_content);
-        qDebug() << "\nAlice session key: "  << message_content << "\n";
+    if(topic_name == SESSION_KEY){
+        QStringList pieces = message_content.split("_");
+        emit sessionKeyComputed(pieces[0], pieces[1]);
+        qDebug() << "\n" << pieces[0] + " session key: "  << message_content << "\n";
     }
     if(topic_name == DISCONNECT_USER){
         int i;
@@ -151,10 +150,8 @@ void Trevor::subscribeToTopics()
     m_mqtt->subscribe(CONNECT_USER, 2);
     m_mqtt->publish(DISCONNECT_USER, "", 2, true);
     m_mqtt->subscribe(DISCONNECT_USER, 2);
-    m_mqtt->publish(SESSION_KEY_BOB, "", 2, true);
-    m_mqtt->subscribe(SESSION_KEY_BOB, 2);
-    m_mqtt->publish(SESSION_KEY_ALICE, "", 2, true);
-    m_mqtt->subscribe(SESSION_KEY_ALICE, 2);
+    m_mqtt->publish(SESSION_KEY, "", 2, true);
+    m_mqtt->subscribe(SESSION_KEY, 2);
 }
 
 void Trevor::sendLogToGUI(const QString &msg)
@@ -269,16 +266,15 @@ void Trevor::generateSessionParameters()
     while(primes.size() < (m+n)) primes = segmented_sieve(limit);
 
     pattern_two(pm, pn, primes);
+    mt19937 mt;
+    uniform_int_distribution<mpz_int> uid(0, params["delta"]);
 
-    std::random_device rd;     // only used once to initialise (seed) engine
-    std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
-    std::uniform_int_distribution<int64_t> uni(1, S64(params["delta"].str().c_str())); // guaranteed unbiased
-    params["y"] = uni(rng);
+    params["y"] = uid(mt);
     mpz_int g;
     g = boost::multiprecision::gcd(params["y"], params["delta"]);
     while(g != 1){
         g = boost::multiprecision::gcd(params["y"], params["delta"]);
-        params["y"] = uni(rng);
+        params["y"] = uid(mt);
     }
     params["totient_delta"] = phi(params["delta"]);
     sess_params_computed = true;
