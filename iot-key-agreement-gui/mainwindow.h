@@ -6,6 +6,7 @@
 
 #include "paramsgui.h"
 #include "trevor.h"
+#include "device.h"
 
 namespace Ui {
 class MainWindow;
@@ -34,6 +35,8 @@ private slots:
 
     void on_pushButton_clicked();
 
+    void on_pushButton_new_device_clicked();
+
 private:
     Trevor *trevor;
     QString host, port, username, password;
@@ -43,6 +46,7 @@ private:
     QStringListModel *sesskey_model;
     QStringList log_list;
     QStringListModel *log_model;
+    QVector<Device*> devices;
     Ui::MainWindow *ui;
     ParamsGUI *params_ui;
 };

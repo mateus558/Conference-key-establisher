@@ -20,14 +20,16 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     mqttserver.cpp \
-    trevor.cpp
+    trevor.cpp \
+    device.cpp
 
 
 
 HEADERS += \
     iot-key-agreement-core_global.h \
     mqttserver.h \
-    trevor.h
+    trevor.h \
+    device.h
 
 # Default rules for deployment.
 #unix {

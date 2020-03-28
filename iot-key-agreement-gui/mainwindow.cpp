@@ -171,3 +171,8 @@ void MainWindow::on_pushButton_clicked()
     trevor->setM(m);
     trevor->setN(n);
 }
+
+void MainWindow::on_pushButton_new_device_clicked()
+{
+    devices.push_back(new Device(this->host, this->port.toInt(), this->username, this->password));
+}

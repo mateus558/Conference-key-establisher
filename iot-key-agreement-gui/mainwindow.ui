@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab_trevor">
        <attribute name="title">
@@ -371,6 +371,19 @@
        <attribute name="title">
         <string>Devices</string>
        </attribute>
+       <widget class="QPushButton" name="pushButton_new_device">
+        <property name="geometry">
+         <rect>
+          <x>130</x>
+          <y>90</y>
+          <width>161</width>
+          <height>25</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Create new device</string>
+        </property>
+       </widget>
       </widget>
      </widget>
     </item>

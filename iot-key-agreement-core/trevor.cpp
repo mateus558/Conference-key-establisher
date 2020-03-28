@@ -87,6 +87,7 @@ void Trevor::onMessageReceived(const QByteArray &message, const QMqttTopicName &
         if(!already_in){
             users.push_back(message_content);
             n_users++;
+            std::cout << n_users << std::endl;
             m_mqtt->publish(NUMBER_USERS, QString::number(n_users), 2);
             qDebug() << message_content << " connected.\n";
             emit userConnected(message_content);
