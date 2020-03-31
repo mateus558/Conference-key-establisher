@@ -1,2 +1,5 @@
+installer/
+package-linux-deb.sh
+dist
 papers/
 IOT-key-agreement.pro.*

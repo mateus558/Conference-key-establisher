@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT += core gui charts
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -27,20 +27,24 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    paramsgui.cpp
+    paramsgui.cpp \
+    experimentsui.cpp
 
 HEADERS += \
         mainwindow.h \
-    paramsgui.h
+    paramsgui.h \
+    experimentsui.h
 
 FORMS += \
         mainwindow.ui \
-    paramsgui.ui
+    paramsgui.ui \
+    experimentsui.ui
 
 # Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
+linux {
+    target.path = $$_PRO_FILE_PWD_/../dist/desktop-linux/root/usr/bin/
+    INSTALLS += target
+}
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../iot-key-agreement-core/release/ -liot-key-agreement-core
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../iot-key-agreement-core/debug/ -liot-key-agreement-core

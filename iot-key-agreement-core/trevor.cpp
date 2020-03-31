@@ -31,6 +31,11 @@ const int64_t L1D_CACHE_SIZE = 32768;
 
 Trevor::Trevor(const QString host, const quint16 port, const QString username, const QString password)
 {
+    this->init(host, port, username, password);
+}
+
+void Trevor::init(const QString host, const quint16 port, const QString username, const QString password)
+{
     if(!username.isEmpty()){
         m_mqtt = new MQTTServer(host, port, username, password);
     }else {
@@ -152,6 +157,8 @@ void Trevor::subscribeToTopics()
     m_mqtt->subscribe(DISCONNECT_USER, 2);
     m_mqtt->publish(SESSION_KEY, "", 2, true);
     m_mqtt->subscribe(SESSION_KEY, 2);
+
+    emit serverConnected();
 }
 
 void Trevor::sendLogToGUI(const QString &msg)

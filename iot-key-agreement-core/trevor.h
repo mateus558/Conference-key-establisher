@@ -13,7 +13,11 @@ class IOTKEYAGREEMENTCORE_EXPORT Trevor: public QObject
 {
     Q_OBJECT
 public:
+    Trevor(){};
+
     Trevor(const QString host, const quint16 port, const QString username = 0, const QString password = 0);
+
+    void init(const QString host, const quint16 port, const QString username = 0, const QString password = 0);
 
     void dropUsers();
 
@@ -62,6 +66,8 @@ signals:
     void emitLogMessage(const QString &msg);
 
     void sessionParamsComputed(QMap<QString, boost::multiprecision::mpz_int>);
+
+    void serverConnected();
 
 private:
     QString host, username, password;

@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab_trevor">
        <attribute name="title">
@@ -385,6 +385,11 @@
        <attribute name="title">
         <string>Experiments</string>
        </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_5">
+        <item>
+         <widget class="ExperimentsUI" name="widget" native="true"/>
+        </item>
+       </layout>
       </widget>
      </widget>
     </item>
@@ -413,6 +418,14 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>ExperimentsUI</class>
+   <extends>QWidget</extends>
+   <header>experimentsui.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

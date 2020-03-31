@@ -32,7 +32,7 @@ HEADERS += \
     device.h
 
 # Default rules for deployment.
-#unix {
-#    target.path = /usr/lib
-#}
-!isEmpty(target.path): INSTALLS += target
+linux {
+    target.path = $$_PRO_FILE_PWD_/../dist/desktop-linux/root/usr/lib/
+    INSTALLS += target
+}

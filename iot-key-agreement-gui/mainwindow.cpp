@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <QFile>
+#include<QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -25,36 +26,34 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->listView_log->setModel(log_model);
 
     QFile file("mqtt.txt");
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return;
-
-    QTextStream in(&file);
-    size_t i = 0;
-    while (!in.atEnd()) {
-        QString line = in.readLine();
-        switch (i) {
-        case 0:
-            this->host = line;
-            ui->lineEdit_host->setText(line);
-            break;
-        case 1:
-            this->port = line.toInt();
-            ui->lineEdit_port->setText(line);
-            break;
-        case 2:
-            this->username = line;
-            ui->lineEdit_username->setText(line);
-            break;
-        case 3:
-            this->password = line;
-            ui->lineEdit_password->setText(line);
-            break;
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)){
+        QTextStream in(&file);
+        size_t i = 0;
+        while (!in.atEnd()) {
+            QString line = in.readLine();
+            switch (i) {
+            case 0:
+                this->host = line;
+                ui->lineEdit_host->setText(line);
+                break;
+            case 1:
+                this->port = line.toInt();
+                ui->lineEdit_port->setText(line);
+                break;
+            case 2:
+                this->username = line;
+                ui->lineEdit_username->setText(line);
+                break;
+            case 3:
+                this->password = line;
+                ui->lineEdit_password->setText(line);
+                break;
+            }
+            i++;
         }
-        i++;
+        file.close();
     }
-    file.close();
-    if(!host.isEmpty() || !port.isEmpty())
-        trevor = new Trevor(host, port.toInt(), username, password);
+    trevor = new Trevor(host, port.toInt(), username, password);
     trevor->setM(3);
     trevor->setN(3);
     ui->lineEdit_m->setText(QString::number(3));
@@ -74,8 +73,6 @@ MainWindow::MainWindow(QWidget *parent) :
             return (user == _user);
         }), users_list.end());
     });
-
-
 }
 
 MainWindow::~MainWindow()
@@ -89,13 +86,17 @@ void MainWindow::on_pushButton_connect_clicked()
     if(trevor->getMqtt()->state() == QMqttClient::Disconnected){
         this->host = ui->lineEdit_host->text();
         this->port = ui->lineEdit_port->text();
-        this->username = ui->lineEdit_username->text();
-        this->password = ui->lineEdit_password->text();
-
-        if(host.isEmpty() || port.isEmpty()){
-            qWarning() << "Cannot connect without a host and a port.\n";
+        if(ui->lineEdit_host->text().isEmpty() || ui->lineEdit_port->text().isEmpty()){
+            QMessageBox msgbox;
+            msgbox.setIcon(QMessageBox::Warning);
+            msgbox.setWindowTitle("IOT Key Agreement");
+            msgbox.addButton(QMessageBox::Ok);
+            msgbox.setText("Warning: you need to provide a host and a port to connect.");
+            msgbox.exec();
             return;
         }
+        this->username = ui->lineEdit_username->text();
+        this->password = ui->lineEdit_password->text();
 
         QFile file("mqtt.txt");
         if (!file.open(QIODevice::WriteOnly)) {
@@ -193,3 +194,5 @@ void MainWindow::on_pushButton_remove_device_clicked()
     delete devices[i];
     devices.erase(it);
 }
+
+

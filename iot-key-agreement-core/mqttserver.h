@@ -41,6 +41,8 @@ public slots:
 
     void updateLogStateChange();
 
+    void onAuthenticationRequest(const QMqttAuthenticationProperties &p);
+
 signals:
     void messageReceived(const QByteArray &message, const QMqttTopicName &topic);
 
