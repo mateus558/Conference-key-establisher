@@ -170,3 +170,21 @@ void ExperimentsUI::on_comboBox_time_measurement_activated(const QString &arg1)
 {
     emit measurementTypeChanged(arg1);
 }
+
+void ExperimentsUI::on_pushButton_2_clicked()
+{
+    for(int i = 0; i < devices.size(); i++){
+        delete devices[i];
+        devices[i] = nullptr;
+    }
+    devices.clear();
+    n_devices = 0;
+}
+
+void ExperimentsUI::on_pushButton_clear_plot_clicked()
+{
+    n_users.clear();
+    time.clear();
+    ui->widget_plot->graph()->setData(n_users, time);
+    ui->widget_plot->replot();
+}

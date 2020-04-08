@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>640</width>
+    <width>775</width>
     <height>634</height>
    </rect>
   </property>
@@ -239,6 +239,13 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="pushButton_clear_plot">
+            <property name="text">
+             <string>Clear plot</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="pushButton_save_pdf">
             <property name="text">
              <string>Save to PDF</string>
@@ -260,6 +267,13 @@
           </size>
          </property>
         </spacer>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton_2">
+         <property name="text">
+          <string>Disconnect all devices</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>

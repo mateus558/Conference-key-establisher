@@ -36,6 +36,10 @@ private slots:
 
     void on_comboBox_time_measurement_activated(const QString &arg1);
 
+    void on_pushButton_2_clicked();
+
+    void on_pushButton_clear_plot_clicked();
+
 public slots:
 
     void receiveComputationTime(double time, int n_users);
@@ -48,7 +52,6 @@ private:
     QString plot_title;
     size_t n_devices, n_finished = 0;
     QVector<Device *> devices;
-    QVector<QThread *> threads;
     QString host, username, password;
     quint16 port;
     QTimer *timer;
