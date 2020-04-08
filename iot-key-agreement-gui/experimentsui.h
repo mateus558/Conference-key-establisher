@@ -22,15 +22,38 @@ public:
 private slots:
     void on_pushButton_runExperiment_clicked();
 
-    void receiveComputationTime(int time);
+    void on_pushButton_save_pdf_clicked();
+
+    void on_pushButton_clicked();
+
+    void on_lineEdit_plot_title_textChanged(const QString &arg1);
+
+    void on_pushButton_load_data_clicked();
+
+    void on_lineEdit_x_title_textChanged(const QString &arg1);
+
+    void on_lineEdit_y_title_textChanged(const QString &arg1);
+
+    void on_comboBox_time_measurement_activated(const QString &arg1);
+
+public slots:
+
+    void receiveComputationTime(double time, int n_users);
+
+signals:
+    void measurementTypeChanged(const QString &measurement_type);
 
 private:
     Ui::ExperimentsUI *ui;
+    QString plot_title;
     size_t n_devices, n_finished = 0;
     QVector<Device *> devices;
     QVector<QThread *> threads;
     QString host, username, password;
     quint16 port;
+    QTimer *timer;
+    QVector<double> time;
+    QVector<double> n_users;
     int total_comp_time = 0;
 };
 

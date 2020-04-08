@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT += core gui charts
+QT += core gui charts printsupport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -28,12 +28,14 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     paramsgui.cpp \
-    experimentsui.cpp
+    experimentsui.cpp \
+    qcustomplot.cpp
 
 HEADERS += \
         mainwindow.h \
     paramsgui.h \
-    experimentsui.h
+    experimentsui.h \
+    qcustomplot.h
 
 FORMS += \
         mainwindow.ui \

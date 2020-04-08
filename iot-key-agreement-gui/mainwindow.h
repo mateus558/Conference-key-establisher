@@ -5,6 +5,7 @@
 #include <QStringListModel>
 
 #include "paramsgui.h"
+#include "experimentsui.h"
 #include "trevor.h"
 #include "device.h"
 
@@ -50,6 +51,7 @@ private:
     QStringListModel *log_model;
     QVector<Device*> devices;
     Ui::MainWindow *ui;
+    ExperimentsUI *experiments;
     ParamsGUI *params_ui;
 };
 

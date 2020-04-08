@@ -914,6 +914,10 @@ moc_trevor.cpp: trevor.h \
 		../../../Qt/5.14.1/gcc_64/include/QtNetwork/qssl.h \
 		../../../Qt/5.14.1/gcc_64/include/QtCore/QFlags \
 		../../../Qt/5.14.1/gcc_64/include/QtCore/QMap \
+		../../../Qt/5.14.1/gcc_64/include/QtCore/QQueue \
+		../../../Qt/5.14.1/gcc_64/include/QtCore/qqueue.h \
+		../../../Qt/5.14.1/gcc_64/include/QtCore/QElapsedTimer \
+		../../../Qt/5.14.1/gcc_64/include/QtCore/qelapsedtimer.h \
 		moc_predefs.h \
 		../../../Qt/5.14.1/gcc_64/bin/moc
 	/home/mateus/Qt/5.14.1/gcc_64/bin/moc $(DEFINES) --include /home/mateus/Repositories/Seg-trab/iot-key-agreement-core/moc_predefs.h -I/home/mateus/Qt/5.14.1/gcc_64/mkspecs/linux-g++ -I/home/mateus/Repositories/Seg-trab/iot-key-agreement-core -I/home/mateus/Qt/5.14.1/gcc_64/include -I/home/mateus/Qt/5.14.1/gcc_64/include/QtMqtt -I/home/mateus/Qt/5.14.1/gcc_64/include/QtNetwork -I/home/mateus/Qt/5.14.1/gcc_64/include/QtCore -I/usr/include/c++/9 -I/usr/include/x86_64-linux-gnu/c++/9 -I/usr/include/c++/9/backward -I/usr/lib/gcc/x86_64-linux-gnu/9/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/9/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include trevor.h -o moc_trevor.cpp
@@ -1254,7 +1258,11 @@ trevor.o: trevor.cpp trevor.h \
 		../../../Qt/5.14.1/gcc_64/include/QtCore/qdatetime.h \
 		../../../Qt/5.14.1/gcc_64/include/QtNetwork/qssl.h \
 		../../../Qt/5.14.1/gcc_64/include/QtCore/QFlags \
-		../../../Qt/5.14.1/gcc_64/include/QtCore/QMap
+		../../../Qt/5.14.1/gcc_64/include/QtCore/QMap \
+		../../../Qt/5.14.1/gcc_64/include/QtCore/QQueue \
+		../../../Qt/5.14.1/gcc_64/include/QtCore/qqueue.h \
+		../../../Qt/5.14.1/gcc_64/include/QtCore/QElapsedTimer \
+		../../../Qt/5.14.1/gcc_64/include/QtCore/qelapsedtimer.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o trevor.o trevor.cpp
 
 device.o: device.cpp device.h \

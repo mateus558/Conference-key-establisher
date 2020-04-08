@@ -77,6 +77,51 @@ void Trevor::disconnectFromHost()
         m_mqtt->disconnectFromBroker();
 }
 
+void Trevor::connect_user(const QString& user)
+{
+    m_mqtt->publish(COMMAND_USER, user + QString("_accepted"), 2);
+    users.push_back(user);
+    users_timer.resize(users.size());
+    users_timer[users_timer.size()-1].start();
+    user_sess_computed.push_back(false);
+    user_sess_computed.fill(false);
+    n_users++;
+    m_mqtt->publish(NUMBER_USERS, QString::number(n_users), 2);
+    qDebug() << user << " connected.\n";
+    emit userConnected(user);
+
+    if(n_users == 1){
+        qDebug() << "\nGenerating session parameters...\n";
+        generateSessionParameters();
+        emit sessionParamsComputed(params);
+    }else if(n_users > 2){
+        for(int i = 0; i < users_timer.size(); i++){
+            users_timer[i].restart();
+        }
+    }
+
+    if(sess_params_computed){
+       qDebug() << "\n Parameters: \n";
+       qDebug() << "Y: " << QString::fromStdString(params["y"].str());
+       qDebug() << "Alpha: " << QString::fromStdString(params["alpha"].str());
+       qDebug() << "Beta: " << QString::fromStdString(params["beta"].str());
+       qDebug() << "Delta: " << QString::fromStdString(params["delta"].str());
+       qDebug() << "Totient delta: " << QString::fromStdString(params["totient_delta"].str());
+
+       qDebug() << "\nSending session parameters.\n";
+
+       QString param_y = PARAM_Y + QString("_") + user, param_alpha = PARAM_ALPHA + QString("_") + user;
+       QString param_beta = PARAM_BETA + QString("_") + user, param_delta = PARAM_DELTA + QString("_") + user;
+       QString param_totient = PARAM_TOTIENTDELTA + QString("_") + user;
+
+       m_mqtt->publish(param_y,QString::fromStdString(params["y"].str()), 2);
+       m_mqtt->publish(param_alpha,QString::fromStdString(params["alpha"].str()), 2);
+       m_mqtt->publish(param_beta,QString::fromStdString(params["beta"].str()), 2);
+       m_mqtt->publish(param_delta,QString::fromStdString(params["delta"].str()), 2);
+       m_mqtt->publish(param_totient, QString::fromStdString(params["totient_delta"].str()), 2);
+    }
+}
+
 void Trevor::onMessageReceived(const QByteArray &message, const QMqttTopicName &topic)
 {
     QString topic_name = topic.name();
@@ -93,43 +138,68 @@ void Trevor::onMessageReceived(const QByteArray &message, const QMqttTopicName &
             }
         }
         if(!already_in){
-            users.push_back(message_content);
-            n_users++;
-            std::cout << n_users << std::endl;
-            m_mqtt->publish(NUMBER_USERS, QString::number(n_users), 2);
-            qDebug() << message_content << " connected.\n";
-            emit userConnected(message_content);
-
-            if(n_users == 1){
-                qDebug() << "\nGenerating session parameters...\n";
-                generateSessionParameters();
-                emit sessionParamsComputed(params);
+            int i;
+            bool not_enter = false;
+            for(i = 0; i < user_sess_computed.size(); i++){
+                if(!user_sess_computed[i]){
+                    not_enter = true;
+                    break;
+                }
             }
-
-            if(sess_params_computed){
-               qDebug() << "\n Parameters: \n";
-               qDebug() << "Y: " << QString::fromStdString(params["y"].str()) << "\n";
-               qDebug() << "Alpha: " << QString::fromStdString(params["alpha"].str()) << "\n";
-               qDebug() << "Beta: " << QString::fromStdString(params["beta"].str()) << "\n";
-               qDebug() << "Delta: " << QString::fromStdString(params["delta"].str()) << "\n";
-               qDebug() << "Totient delta: " << QString::fromStdString(params["totient_delta"].str()) << "\n";
-
-               qDebug() << "\nSending session parameters.\n";
-
-               m_mqtt->publish(PARAM_Y, QString::fromStdString(params["y"].str()), 2);
-               m_mqtt->publish(PARAM_ALPHA, QString::fromStdString(params["alpha"].str()), 2);
-               m_mqtt->publish(PARAM_BETA, QString::fromStdString(params["beta"].str()), 2);
-               m_mqtt->publish(PARAM_DELTA, QString::fromStdString(params["delta"].str()), 2);
-               m_mqtt->publish(PARAM_TOTIENTDELTA, QString::fromStdString(params["totient_delta"].str()), 2);
-            }
+            if(n_users == 1 || !not_enter){
+                connect_user(message_content);
+            }else users_queue.enqueue(message_content);
         }else {
             qDebug() << message_content << " is already connected.\n";
         }
     }
     if(topic_name == SESSION_KEY){
         QStringList pieces = message_content.split("_");
-        emit sessionKeyComputed(pieces[0], pieces[1]);
-        qDebug() << "\n" << pieces[0] + " session key: "  << message_content << "\n";
+        QString user = pieces[0], session_key = pieces[1];
+        int i;
+
+        for(i = 0; i < users.size(); i++){
+            if(users[i] == user){
+                break;
+            }
+        }
+        if(i < users.size()) user_sess_computed[i] = true;
+
+        for(i = 0; i < user_sess_computed.size(); i++){
+            if(!user_sess_computed[i]){
+                break;
+            }else{
+                double time_elapsed = double(users_timer[i].elapsed());
+                if(time_elapsed > max_time){
+                    max_time = time_elapsed/1000;
+                }
+            }
+        }
+        qDebug() << "i: " << i << "users: " << user_sess_computed.size();
+        if(i == user_sess_computed.size()){
+            qDebug() << time_counter;
+            if(time_type == "Individual"){
+                time_counter = max_time;
+            }else if(time_type == "Cummulative"){
+                time_counter += max_time;
+            }
+            emit sessionTime(time_counter, users.size());
+            if(time_type == "Individual"){
+                time_counter = 0.0;
+            }
+        }
+
+        if(!users_queue.isEmpty() && i == user_sess_computed.size()){
+            QString next_user = users_queue.dequeue();
+            connect_user(next_user);
+            for(auto _user: users){
+                if(user == _user) continue;
+                m_mqtt->publish(COMMAND_USER, _user + QString("_sendgamma"), 2);
+            }
+        }
+
+        emit sessionKeyComputed(user, session_key);
+        qDebug() << "\n" << user + " session key: "  << session_key << "\n";
     }
     if(topic_name == DISCONNECT_USER){
         int i;
@@ -166,6 +236,11 @@ void Trevor::sendLogToGUI(const QString &msg)
     emit emitLogMessage(msg);
 }
 
+void Trevor::changeMeasurementType(const QString &measurement_type)
+{
+    time_type = measurement_type;
+}
+
 MQTTServer *Trevor::getMqtt() const
 {
     return m_mqtt;
@@ -174,19 +249,6 @@ MQTTServer *Trevor::getMqtt() const
 QMap<QString, boost::multiprecision::mpz_int> Trevor::getParams() const
 {
     return params;
-}
-
-int64_t S64(const char *s) {
-    int64_t i;
-    char c ;
-    int scanned = sscanf(s, "%" SCNd64 "%c", &i, &c);
-  if (scanned == 1) return i;
-  if (scanned > 1) {
-    // TBD about extra data found
-    return i;
-    }
-  // TBD failed to scan;
-  return 0;
 }
 
 mpz_int phi(mpz_int n)

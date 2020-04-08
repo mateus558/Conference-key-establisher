@@ -13,6 +13,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     params_ui = new ParamsGUI();
+    experiments = new ExperimentsUI();
+    ui->tabWidget->removeTab(1);
+    ui->tabWidget->addTab(experiments, "Experiments");
     users_model = new QStringListModel(this);
     users_model->setStringList(users_list);
     ui->listView_users->setModel(users_model);
@@ -62,6 +65,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(trevor, &Trevor::sessionKeyComputed, this, &MainWindow::addSessionKeyToView);
     QObject::connect(trevor, &Trevor::emitLogMessage, this, &MainWindow::addLogMessageToView);
     QObject::connect(trevor, &Trevor::sessionParamsComputed, params_ui, &ParamsGUI::receiveParameters);
+    QObject::connect(trevor, &Trevor::sessionTime, experiments, &ExperimentsUI::receiveComputationTime);
+    QObject::connect(experiments, &ExperimentsUI::measurementTypeChanged, trevor, &Trevor::changeMeasurementType);
     QObject::connect(trevor, &Trevor::userDisconnected, params_ui, [this](const QString user){
         size_t row = 0;
         for(auto _user: users_list){
@@ -148,6 +153,7 @@ void MainWindow::addSessionKeyToView(const QString user, const QString session_k
     sesskey_list << content;
     sesskey_model->setStringList(sesskey_list);
     ui->listView->setModel(sesskey_model);
+    ui->listView->scrollToBottom();
 }
 
 void MainWindow::addLogMessageToView(const QString &msg)
@@ -155,6 +161,7 @@ void MainWindow::addLogMessageToView(const QString &msg)
     log_list << msg;
     log_model->setStringList(log_list);
     ui->listView_log->setModel(log_model);
+    ui->listView_log->scrollToBottom();
 }
 
 void MainWindow::on_pushButton_parameters_clicked()

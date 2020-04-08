@@ -3,18 +3,6 @@
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <random>
 
-const QString CONNECT_USER = "dcc075/users/connect";
-const QString DISCONNECT_USER = "dcc075/users/disconnect";
-const QString NUMBER_USERS = "dcc075/users/number_users";
-const QString COMMAND_USER = "dcc075/users/command";
-const QString PARAM_ALPHA = "dcc075/params/alpha";
-const QString PARAM_BETA = "dcc075/params/beta";
-const QString PARAM_Y = "dcc075/params/y_param";
-const QString PARAM_DELTA = "dcc075/params/delta";
-const QString PARAM_GAMMA = "dcc075/params/gamma";
-const QString PARAM_TOTIENTDELTA = "dcc075/params/totient_delta";
-const QString SESSION_KEY = "dcc075/sessionkey";
-
 using namespace boost::multiprecision;
 using namespace boost::random;
 
@@ -79,17 +67,19 @@ void Device::compute_session_key()
 {
     mpz_int prod_gamma, z;
 
-    prod_gamma = 1;
-    for(int i = 0; i < users.size(); i++){
-        if(users[i] == id_mqtt) continue;
-        prod_gamma *= gammas[i] % alpha;
+    if(y > 0 && alpha > 0 && beta > 0 && delta > 0 && totient_delta > 0){
+        prod_gamma = 1;
+        for(int i = 0; i < users.size(); i++){
+            if(users[i] == id_mqtt) continue;
+            prod_gamma *= gammas[i] % alpha;
+        }
+        z = (prod_gamma*xb) % alpha;
+        session_key = powm(y, z, delta);
+        cpp_dec_float_50 bits = boost::multiprecision::log2(session_key.convert_to<cpp_dec_float_50>());
+        qDebug() << "number of bits: " << QString::fromStdString(bits.convert_to<mpz_int>().str()) << "\n";
+        m_mqtt->publish(SESSION_KEY, this->id_mqtt + QString("_") + QString::fromStdString(session_key.str()), 2);
+        session_key_computed = true;
     }
-    z = (prod_gamma*xb) % alpha;
-    session_key = powm(y, z, delta);
-    cpp_dec_float_50 bits = boost::multiprecision::log2(session_key.convert_to<cpp_dec_float_50>());
-    qDebug() << "number of bits: " << QString::fromStdString(bits.convert_to<mpz_int>().str()) << "\n";
-    m_mqtt->publish(SESSION_KEY, this->id_mqtt + QString("_") + QString::fromStdString(session_key.str()), 2);
-    session_key_computed = true;
 }
 
 std::string Device::generate_random_id(std::string &str, size_t length)
@@ -113,6 +103,19 @@ void Device::onMessageReceived(const QByteArray &message, const QMqttTopicName &
     QString message_content = QString::fromUtf8(message.data());
     total_time += timer.elapsed();
 
+    if(topic_name == COMMAND_USER){
+        QStringList pieces = message_content.split('_');
+        if(pieces[0] != id_mqtt) return;
+        if(pieces[1] == QString("accepted")){
+            accepted = true;
+        }
+        if(pieces[1] == QString("sendgamma")){
+            if(gamma_computed) m_mqtt->publish(PARAM_GAMMA, id_mqtt + QString("_") + QString::fromStdString(gamma.str()), 2);
+        }
+    }
+
+    if(accepted) qDebug() << id_mqtt << " " << message << " " << topic;
+
     if(topic_name == NUMBER_USERS){
         n_users = message_content.toInt();
         timer.start();
@@ -132,21 +135,18 @@ void Device::onMessageReceived(const QByteArray &message, const QMqttTopicName &
         if(n_users > 1 && n_users == gammas.size()) compute_session_key();
         qDebug() << QString("[") + id_mqtt + QString("]: ") + message_content << " disconnected.\n";
     }
+
     if(!gamma_computed){
         total_time += timer.elapsed();
         if(y == 0 && topic_name == PARAM_Y){
             y = mpz_int(message_content.toStdString());
-        }
-        if(alpha == 0 && topic_name == PARAM_ALPHA){
+        }else if(alpha == 0 && topic_name == PARAM_ALPHA){
             alpha = mpz_int(message_content.toStdString());
-        }
-        if(beta == 0 && topic_name == PARAM_BETA){
+        }else if(beta == 0 && topic_name == PARAM_BETA){
             beta = mpz_int(message_content.toStdString());
-        }
-        if(delta == 0 && topic_name == PARAM_DELTA){
+        }else if(delta == 0 && topic_name == PARAM_DELTA){
             delta = mpz_int(message_content.toStdString());
-        }
-        if(totient_delta == 0 && topic_name == PARAM_TOTIENTDELTA){
+        }else if(totient_delta == 0 && topic_name == PARAM_TOTIENTDELTA){
             totient_delta = mpz_int(message_content.toStdString());
         }
 
@@ -158,7 +158,7 @@ void Device::onMessageReceived(const QByteArray &message, const QMqttTopicName &
         }
         total_time += timer.elapsed();
     }
-    if(topic_name == PARAM_GAMMA){
+    if(topic_name == PARAM_GAMMA && accepted){
         timer.start();
         QStringList pieces = message_content.split('_');
         bool compute = true;
@@ -170,6 +170,7 @@ void Device::onMessageReceived(const QByteArray &message, const QMqttTopicName &
                 break;
             }
         }
+
         if(i < users.size()){
             gammas[i].assign(user_gamma.toStdString());
         }else{
@@ -187,6 +188,12 @@ void Device::onMessageReceived(const QByteArray &message, const QMqttTopicName &
 
 void Device::subscribeToTopics()
 {
+    PARAM_Y += QString("_")+id_mqtt;
+    PARAM_ALPHA += QString("_")+id_mqtt;
+    PARAM_BETA += QString("_")+id_mqtt;
+    PARAM_DELTA += QString("_")+id_mqtt;
+    PARAM_TOTIENTDELTA += QString("_")+id_mqtt;
+
     m_mqtt->subscribe(NUMBER_USERS, 2);
     m_mqtt->subscribe(COMMAND_USER, 2);
     m_mqtt->subscribe(PARAM_Y, 2);

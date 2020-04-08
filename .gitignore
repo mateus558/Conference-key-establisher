@@ -2,4 +2,5 @@ installer/
 package-linux-deb.sh
 dist
 papers/
+iot-key-agreement-gui/Data/*
 IOT-key-agreement.pro.*
